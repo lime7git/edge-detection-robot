@@ -16,9 +16,12 @@
 #define OLED_SA0   8
        
 int Distance = 0;
-int DistanceThreshold = 15;
-int SpeedR = 55;
-int SpeedL = 50;
+int DistancesMean = 0;
+int StepsOfCalibration = 10;
+int DistanceFactor = 2;
+int DistanceThreshold = 0;
+int SpeedR = 43;
+int SpeedL = 40;
 unsigned long LastTime = 0;
 unsigned int counter = 0;
 
@@ -76,8 +79,8 @@ void Backward()
 
 void Right()
 {
-  analogWrite(PWMA,50);
-  analogWrite(PWMB,50);
+  analogWrite(PWMA,25);
+  analogWrite(PWMB,27);
   digitalWrite(AIN1,LOW);
   digitalWrite(AIN2,HIGH);
   digitalWrite(BIN1,HIGH); 
@@ -86,8 +89,8 @@ void Right()
 
 void Left()
 {
-  analogWrite(PWMA,50);
-  analogWrite(PWMB,50);
+  analogWrite(PWMA,25);
+  analogWrite(PWMB,27);
   digitalWrite(AIN1,HIGH);
   digitalWrite(AIN2,LOW);
   digitalWrite(BIN1,LOW); 
@@ -103,18 +106,28 @@ void Rotate180()
 void RotateRandom()
 {
   long randomNumber;
-  randomNumber = random(1,2);
+  randomNumber = random(1,4);
   if(randomNumber == 1)
   {
     Right();
+    delay(650);
+  }
+  else if(randomNumber == 2)
+  {
+    Left();
+    delay(650);
+  }
+  else if(randomNumber == 3)
+  {
+    Right();
+    delay(1300);
   }
   else
   {
-    Left();
+    Right();
+    delay(1350);
   }
 
-  randomNumber = random(100, 1000);
-  delay(randomNumber);
   Stop();
   delay(100);
 }
@@ -141,7 +154,7 @@ void EdgeDetected()
   delay(500);
   Stop();
   delay(100);
-  RotateRandom();
+  RotateRandom(); 
 
   oled.clearDisplay();
   oled.setTextSize(2);
@@ -220,8 +233,19 @@ void setup()
     delay(50);
   }
   oled.clearDisplay();
+  oled.setTextSize(2);
+  oled.setTextColor(1);
+  oled.setCursor(0,20);
+  oled.println("CALIBRATION!");
   oled.display();
-  delay(1000);
+
+  for(int i = 0; i < StepsOfCalibration; i++)
+  {
+    DistancesMean += Distance_test();
+  }
+  DistanceThreshold = (DistancesMean / StepsOfCalibration) + DistanceFactor;
+  
+  delay(3500);
   oled.clearDisplay();
   oled.setTextSize(2);
   oled.setTextColor(1);
@@ -233,7 +257,7 @@ void setup()
 void loop() 
 {
       Distance = Distance_test();     
-  
+
         if(Distance > DistanceThreshold)
         {
           EdgeDetected();
